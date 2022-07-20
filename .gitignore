@@ -1,0 +1,9 @@
+# Binaries for programs and plugins
+main
+vlang-test
+*.exe
+*.exe~
+*.so
+*.dylib
+*.dll
+vls.log
