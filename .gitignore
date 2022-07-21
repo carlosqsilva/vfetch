@@ -7,3 +7,4 @@ vfetch
 *.dylib
 *.dll
 vls.log
+.DS_Store
