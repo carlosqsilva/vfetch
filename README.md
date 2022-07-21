@@ -15,7 +15,8 @@ vfetch
 ```
 flags:
 ```
- -m --music   | show current playing song
+ -s --song   | Print current playing music, works with Apple Music
+ -i --image  | Display custom image, only works with kitty terminal
 ```
 
 # Building
