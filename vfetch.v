@@ -16,23 +16,24 @@ fn success(result string) Result {
 }
 
 const (
-	logo = '                     c.
-                 ,xNMM.   
-               .OMMMMo
-               OMMM0,
-     .;loddo:.  .olloddol;.
-   cKMMMMMMMMMMNWMMMMMMMMMM0:
- .KMMMMMMMMMMMMMMMMMMMMMMMWd.
- XMMMMMMMMMMMMMMMMMMMMMMMX.
-;MMMMMMMMMMMMMMMMMMMMMMMM:
-:MMMMMMMMMMMMMMMMMMMMMMMM:
-.MMMMMMMMMMMMMMMMMMMMMMMMX.
- kMMMMMMMMMMMMMMMMMMMMMMMMWd.
- .XMMMMMMMMMMMMMMMMMMMMMMMMMMk
-  .XMMMMMMMMMMMMMMMMMMMMMMMMK.
-    kMMMMMMMMMMMMMMMMMMMMMMd
-     ;KMMMMMMMWXXWMMMMMMMk.
-       .cooc,.    .,coo:.'
+	logo = '
+                      c.
+                  ,xNMM.
+                .OMMMMo
+                OMMM0,
+      .;loddo:.  .olloddol;.
+    cKMMMMMMMMMMNWMMMMMMMMMM0:
+  .KMMMMMMMMMMMMMMMMMMMMMMMWd.
+  XMMMMMMMMMMMMMMMMMMMMMMMX.
+ ;MMMMMMMMMMMMMMMMMMMMMMMM:
+ :MMMMMMMMMMMMMMMMMMMMMMMM:
+ .MMMMMMMMMMMMMMMMMMMMMMMMX.
+  kMMMMMMMMMMMMMMMMMMMMMMMMWd.
+  .XMMMMMMMMMMMMMMMMMMMMMMMMMMk
+   .XMMMMMMMMMMMMMMMMMMMMMMMMK.
+     kMMMMMMMMMMMMMMMMMMMMMMd
+      ;KMMMMMMMWXXWMMMMMMMk.
+        .cooc,.    .,coo:.'
 	failure = Result{}
 )
 
@@ -40,13 +41,22 @@ struct Info {
 	logo []string = logo.split('\n')
 	start_at int
 	left_gap int
+	image string
 mut:
 	gap int
 	index int
+	columns int
+	can_display_image bool
 	content strings.Builder = strings.new_builder(32768)
 }
 
-fn (mut info Info) compute_gap() {
+fn (mut info Info) start() {
+	term.clear()
+	info.can_display_image = os.exists_in_system_path('kitty')
+
+	col, _ := term.get_terminal_size()
+	info.columns = col
+
 	for line in info.logo {
 		if line.len > info.gap {
 			info.gap = line.len
@@ -57,8 +67,9 @@ fn (mut info Info) compute_gap() {
 }
 
 fn (mut info Info) write_logo() {
-	if info.index >= info.logo.len {
-		info.content.write_string(' '.repeat(info.gap))	
+	if info.index >= info.logo.len || info.image != '' {
+		info.content.write_string(' '.repeat(info.gap))
+		info.index++
 		return
 	}
 
@@ -70,11 +81,11 @@ fn (mut info Info) write_logo() {
 		else { term.blue }
 	}
 
-	str := info.logo[info.index]
-	str_color := term.colorize(color, str)
-	
+	str_logo := info.logo[info.index]
+	str_color := term.colorize(color, str_logo)
+
 	info.content.write_string(str_color)
-	info.content.write_string(' '.repeat(info.gap - str.len))
+	info.content.write_string(' '.repeat(info.gap - str_logo.len))
 	info.index++
 }
 
@@ -84,10 +95,6 @@ fn (mut info Info) add_line() {
 }
 
 fn (mut info Info) write_string(str string) {
-	if info.gap == 0 {
-		info.compute_gap()
-	}
-
 	if info.index <= info.start_at {
 		for _ in 0..info.start_at {
 			info.add_line()
@@ -95,7 +102,6 @@ fn (mut info Info) write_string(str string) {
 	}
 
 	info.write_logo()
-
 	info.content.write_string(str)
 	info.content.write_string('\n')
 }
@@ -107,7 +113,14 @@ fn (mut info Info) print() {
 			info.content.write_string('\n')
 		}
 	}
-	
+
+	if info.can_display_image && info.image != '' {
+		image_path := os.real_path(info.image)
+		if os.exists(image_path) {
+			os.execute('kitty +kitten icat --align left --place ${32}x${24}@1x1 $image_path')
+		}
+	}
+
 	println(info.content)
 }
 
@@ -124,7 +137,7 @@ struct System {
 	machine Result
 	battery Result
 mut:
-	music Result
+	song Result
 }
 
 struct DisplayDevice {
@@ -163,7 +176,7 @@ fn get_user(str string) Result {
 	if pieces.len >= 2 {
 		return success(pieces[1])
 	}
-	
+
 	return failure
 }
 
@@ -180,7 +193,7 @@ fn get_uptime(str string) Result {
 	if now == startup {
 		return failure
 	}
-	
+
 	duration := (now - startup).str()
 
 	return success(duration)
@@ -208,10 +221,10 @@ fn get_memory(str string) Result {
 
 	if 0 in [total, pages_size, app, wired, compressed] {
 		return failure
-	} 
+	}
 
-	mem_used := ((app + wired + compressed) * pages_size / 1024 / 1024) / 1024 
-	
+	mem_used := ((app + wired + compressed) * pages_size / 1024 / 1024) / 1024
+
 	return success('${mem_used:.2} / $total GiB')
 }
 
@@ -235,7 +248,7 @@ fn get_gpu(data Machine) Result {
 	if data.displays.len > 0 {
 		for display in data.displays {
 			if display.device_type == 'spdisplays_gpu' {
-				model = display.model 
+				model = display.model
 				cores = display.cores
 				break
 			}
@@ -282,7 +295,7 @@ fn get_resolution(str string) Result {
 		freq := re.get_group_by_name(str, 'freq')
 		return success('$res @ ${freq}Hz')
 	}
-	
+
 	return failure
 }
 
@@ -325,7 +338,7 @@ fn get_machine(data Machine) Result {
 			if hardware.machine.len > 0 {
 				return success(hardware.machine)
 			}
-		} 
+		}
 	}
 
 	return failure
@@ -377,7 +390,7 @@ fn new_system() ?System {
 	mut machine := failure
 	mut battery := failure
 	mut term := failure
-	
+
 	for field in query.output.split('|') {
 		match true {
 			field.starts_with('USER') { user = get_user(field) }
@@ -388,7 +401,7 @@ fn new_system() ?System {
 			field.starts_with('OS') { os = get_os(field) }
 			field.starts_with('TERM') { term = get_term(field) }
 			field.starts_with('BATTERY') { term = get_battery(field) }
-			field.starts_with('MISC') { 
+			field.starts_with('MISC') {
 				data := get_misc(field) or {
 					continue
 				}
@@ -402,29 +415,27 @@ fn new_system() ?System {
 
 	return System{
 		user: user,
-		uptime: uptime, 
-		memory: memory, 
-		cpu: cpu, 
-		gpu: gpu, 
-		resolution: resolution, 
-		storage: storage, 
-		os: os, 
-		term: term, 
-		machine: machine, 
+		uptime: uptime,
+		memory: memory,
+		cpu: cpu,
+		gpu: gpu,
+		resolution: resolution,
+		storage: storage,
+		os: os,
+		term: term,
+		machine: machine,
 		battery: battery
 	}
 }
 
-fn (mut sys System) get_music() {
+fn (mut sys System) get_song() {
 	data := os.execute("osascript -e \
 		'tell application \"Music\" to artist of current track as string \
 		& \" - \" & name of current track as string'")
 
-	result := data.output.trim_space() 
-	if result.len > 0 {
-		sys.music = success(result)
-	} else {
-		sys.music = failure
+	result := data.output.trim_space()
+	if data.exit_code == 0 && result.len > 0 {
+		sys.song = success(result)
 	}
 }
 
@@ -432,12 +443,14 @@ fn main() {
 	mut fp := flag.new_flag_parser(os.args)
 	fp.description('System fetch written in vlang')
 	fp.skip_executable()
-	should_get_music := fp.bool('music', `m`, false, 'Print current playing music, works with Spotify and Apple Music')
+	should_get_song := fp.bool('song', `s`, false, 'Print current playing music, works with Apple Music')
+	custom_image := fp.string('image', `i`, '', 'Display custom image, only works with kitty terminal')
 
 	mut sys := new_system()?
 
-	mut info := Info{start_at: 1, left_gap: 4}
+	mut info := Info{start_at: 2, left_gap: 4, image: custom_image}
 
+	info.start()
 	info.write_string(term.bright_yellow('╭────────────╮'))
 
 	if sys.user.success {
@@ -447,7 +460,7 @@ fn main() {
 	if sys.machine.success {
 		info.write_string(term.bright_yellow('│ MACHINE    │ : $sys.machine.result'))
 	}
-	
+
 	if sys.os.success {
 		info.write_string(term.bright_yellow('│ OS         │ : $sys.os.result'))
 	}
@@ -490,13 +503,13 @@ fn main() {
 	info.write_string(term.bright_yellow('│ COLORS     │ ${term.white(dot)} ${term.gray(dot)} ${term.red(dot)} ${term.yellow(dot)} ${term.green(dot)} ${term.blue(dot)} ${term.magenta(dot)}'))
 	info.write_string(term.bright_yellow('╰────────────╯'))
 
-	if should_get_music {
-		sys.get_music()
+	if should_get_song {
+		sys.get_song()
 	}
 
-	if sys.music.success {
+	if sys.song.success {
 		info.add_line()
-		info.write_string(term.bright_yellow('Song : ${term.red(sys.music.result)}'))
+		info.write_string(term.bright_yellow('Song : ${term.red(sys.song.result)}'))
 	}
 
 	info.print()
