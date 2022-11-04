@@ -353,7 +353,7 @@ fn get_battery(str string) Result {
 	return failure
 }
 
-fn get_misc(str string) ?Machine {
+fn get_misc(str string) !Machine {
 	return json.decode(Machine, str.trim_left('MISC '))
 }
 
