@@ -31,7 +31,7 @@ cd vfetch/
 ```
 ### 3) build program
 ```bash
-v -prod vfetch.v
+v -prod .
 ```
 After that you will get a ready-made binary file in the root directory of the project.
 
