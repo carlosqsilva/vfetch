@@ -386,10 +386,10 @@ fn new_system() ?System {
 	mut gpu := failure
 	mut resolution := failure
 	mut storage := failure
-	mut os := failure
+	mut myos := failure
 	mut machine := failure
 	mut battery := failure
-	mut term := failure
+	mut myterm := failure
 
 	for field in query.output.split('|') {
 		match true {
@@ -398,9 +398,9 @@ fn new_system() ?System {
 			field.starts_with('MEMORY') { memory = get_memory(field) }
 			field.starts_with('CPU') { cpu = get_cpu(field) }
 			field.starts_with('RESOLUTION') { resolution = get_resolution(field) }
-			field.starts_with('OS') { os = get_os(field) }
-			field.starts_with('TERM') { term = get_term(field) }
-			field.starts_with('BATTERY') { term = get_battery(field) }
+			field.starts_with('OS') { myos = get_os(field) }
+			field.starts_with('TERM') { myterm = get_term(field) }
+			field.starts_with('BATTERY') { battery = get_battery(field) }
 			field.starts_with('MISC') {
 				data := get_misc(field) or {
 					continue
@@ -421,8 +421,8 @@ fn new_system() ?System {
 		gpu: gpu,
 		resolution: resolution,
 		storage: storage,
-		os: os,
-		term: term,
+		os: myos,
+		term: myterm,
 		machine: machine,
 		battery: battery
 	}
