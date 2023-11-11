@@ -19,7 +19,16 @@ flags:
  -i --image  | Display custom image, only works with kitty terminal
 ```
 
-# Building
+# Installation
+
+## Homebrew
+
+```bash
+brew install carlosqsilva/brew/vfetch
+```
+
+## Install from source
+
 ### 0) Install [vlang](https://vlang.io), and add to your `path`
 ### 1) clone repo
 ```bash
