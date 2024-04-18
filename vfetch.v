@@ -329,26 +329,26 @@ fn get_os(str string) Result {
 		}
 
 		return match true {
-			version.ge(semver.build(14, 0, 0)) { 'Sonoma' }
-			version.ge(semver.build(13, 0, 0)) { 'Ventura' }
-			version.ge(semver.build(12, 0, 0)) { 'Monterey' }
-			version.ge(semver.build(11, 0, 0)) { 'Big Sur' }
-			version.ge(semver.build(10, 15, 0)) { 'Catalina' }
-			version.ge(semver.build(10, 14, 0)) { 'Mojave' }
-			version.ge(semver.build(10, 13, 0)) { 'High Sierra' }
-			version.ge(semver.build(10, 12, 0)) { 'Sierra' }
-			version.ge(semver.build(10, 11, 0)) { 'El Capitan' }
-			version.ge(semver.build(10, 10, 0)) { 'Yosemite' }
-			version.ge(semver.build(10, 9, 0)) { 'Mavericks' }
-			version.ge(semver.build(10, 8, 0)) { 'Mountain Lion' }
-			version.ge(semver.build(10, 7, 0)) { 'Lion' }
-			version.ge(semver.build(10, 6, 0)) { 'Snow Leopard' }
-			version.ge(semver.build(10, 5, 0)) { 'Leopard' }
-			version.ge(semver.build(10, 4, 0)) { 'Tiger' }
-			version.ge(semver.build(10, 3, 0)) { 'Panther' }
-			version.ge(semver.build(10, 2, 0)) { 'Jaguar' }
-			version.ge(semver.build(10, 1, 0)) { 'Puma' }
-			version.ge(semver.build(10, 0, 0)) { 'Cheetah' }
+			version >= semver.build(14, 0, 0) { 'Sonoma' }
+			version >= semver.build(13, 0, 0) { 'Ventura' }
+			version >= semver.build(12, 0, 0) { 'Monterey' }
+			version >= semver.build(11, 0, 0) { 'Big Sur' }
+			version >= semver.build(10, 15, 0) { 'Catalina' }
+			version >= semver.build(10, 14, 0) { 'Mojave' }
+			version >= semver.build(10, 13, 0) { 'High Sierra' }
+			version >= semver.build(10, 12, 0) { 'Sierra' }
+			version >= semver.build(10, 11, 0) { 'El Capitan' }
+			version >= semver.build(10, 10, 0) { 'Yosemite' }
+			version >= semver.build(10, 9, 0) { 'Mavericks' }
+			version >= semver.build(10, 8, 0) { 'Mountain Lion' }
+			version >= semver.build(10, 7, 0) { 'Lion' }
+			version >= semver.build(10, 6, 0) { 'Snow Leopard' }
+			version >= semver.build(10, 5, 0) { 'Leopard' }
+			version >= semver.build(10, 4, 0) { 'Tiger' }
+			version >= semver.build(10, 3, 0) { 'Panther' }
+			version >= semver.build(10, 2, 0) { 'Jaguar' }
+			version >= semver.build(10, 1, 0) { 'Puma' }
+			version >= semver.build(10, 0, 0) { 'Cheetah' }
 			else { none }
 		}
 	}
