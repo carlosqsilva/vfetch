@@ -504,6 +504,7 @@ fn main() {
 	fp.skip_executable()
 	should_get_song := fp.bool('song', `s`, false, 'Print current playing music, works with Apple Music')
 	custom_image := fp.string('image', `i`, '', 'Display custom image, only works with kitty terminal')
+	hide_colour_strip := fp.bool('no-colour-demo', 0, false, 'Hide the colour demo strip')
 	no_colour_mode := fp.bool('no-colour', `c`, false, 'Disables colour formatting')
 
 	mut sys := new_system()?
