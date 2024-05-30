@@ -43,12 +43,14 @@ struct Info {
 	start_at int
 	left_gap int
 	image    string
+	no_colour_mode bool
 mut:
 	gap               int
 	index             int
 	columns           int
 	can_display_image bool
 	content           strings.Builder = strings.new_builder(32768)
+	remove_colours_re regex.RE = regex.regex_opt('\x1b\\[[0-9;]*[a-zA-Z]') or { panic(err) }
 }
 
 fn (mut info Info) start() {
@@ -98,6 +100,7 @@ fn (mut info Info) add_line() {
 	info.content.write_string('\n')
 }
 
+
 fn (mut info Info) write_string(str string) {
 	if info.index <= info.start_at {
 		for _ in 0 .. info.start_at {
@@ -125,7 +128,12 @@ fn (mut info Info) print() {
 		}
 	}
 
-	println(info.content)
+	mut to_print := info.content.str()
+	if info.no_colour_mode {
+		to_print = info.remove_colours_re.replace(to_print, '')
+	}
+
+	println(to_print)
 }
 
 struct System {
@@ -496,6 +504,7 @@ fn main() {
 	fp.skip_executable()
 	should_get_song := fp.bool('song', `s`, false, 'Print current playing music, works with Apple Music')
 	custom_image := fp.string('image', `i`, '', 'Display custom image, only works with kitty terminal')
+	no_colour_mode := fp.bool('no-colour', `c`, false, 'Disables colour formatting')
 
 	mut sys := new_system()?
 
@@ -503,6 +512,7 @@ fn main() {
 		start_at: 2
 		left_gap: 4
 		image: custom_image
+		no_colour_mode: no_colour_mode
 	}
 
 	info.start()
@@ -552,9 +562,12 @@ fn main() {
 		info.write_string(term.bright_yellow('│ TERMINAL   │ : ${sys.term.result}'))
 	}
 
-	dot := '■'
-	info.write_string(term.bright_yellow('├────────────┤'))
-	info.write_string(term.bright_yellow('│ COLORS     │ ${term.white(dot)} ${term.gray(dot)} ${term.red(dot)} ${term.yellow(dot)} ${term.green(dot)} ${term.blue(dot)} ${term.magenta(dot)}'))
+	if !hide_colour_strip && !no_colour_mode {
+		dot := '■'
+		info.write_string(term.bright_yellow('├────────────┤'))
+		info.write_string(term.bright_yellow('│ COLORS     │ ${term.white(dot)} ${term.gray(dot)} ${term.red(dot)} ${term.yellow(dot)} ${term.green(dot)} ${term.blue(dot)} ${term.magenta(dot)}'))
+	}
+
 	info.write_string(term.bright_yellow('╰────────────╯'))
 
 	if should_get_song {
