@@ -14,9 +14,12 @@
 vfetch
 ```
 flags:
-```
- -s --song   | Print current playing music, works with Apple Music
- -i --image  | Display custom image, only works with kitty terminal
+
+```bash
+-s --song          | Print current playing music, works with Apple Music
+-i --image         | Display custom image, only works with kitty terminal
+--no-colour        | Turns off colour-formatted output and also implies --no-colour-demo
+--no-colour-demo   | Turns off the colour demo swatch
 ```
 
 # Installation
