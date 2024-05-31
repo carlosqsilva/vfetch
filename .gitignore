@@ -8,3 +8,4 @@ vfetch
 *.dll
 vls.log
 .DS_Store
+*.dSYM
