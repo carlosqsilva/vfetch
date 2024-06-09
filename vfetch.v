@@ -6,6 +6,7 @@ import time
 import json
 import strings
 import semver
+import arrays
 
 struct Result {
 	success bool
@@ -16,8 +17,7 @@ fn success(result string) Result {
 	return Result{true, result}
 }
 
-const (
-	logo = '
+const logo = '
                       c.
                   ,xNMM.
                 .OMMMMo
@@ -35,14 +35,14 @@ const (
      kMMMMMMMMMMMMMMMMMMMMMMd
       ;KMMMMMMMWXXWMMMMMMMk.
         .cooc,.    .,coo:.'
-	failure = Result{}
-)
+
+const failure = Result{}
 
 struct Info {
-	logo     []string = logo.split('\n')
-	start_at int
-	left_gap int
-	image    string
+	logo           []string = logo.split('\n')
+	start_at       int
+	left_gap       int
+	image          string
 	no_colour_mode bool
 mut:
 	gap               int
@@ -50,7 +50,7 @@ mut:
 	columns           int
 	can_display_image bool
 	content           strings.Builder = strings.new_builder(32768)
-	remove_colours_re regex.RE = regex.regex_opt('\x1b\\[[0-9;]*[a-zA-Z]') or { panic(err) }
+	remove_colours_re regex.RE        = regex.regex_opt('\x1b\\[[0-9;]*[a-zA-Z]') or { panic(err) }
 }
 
 fn (mut info Info) start() {
@@ -100,7 +100,6 @@ fn (mut info Info) add_line() {
 	info.content.write_string('\n')
 }
 
-
 fn (mut info Info) write_string(str string) {
 	if info.index <= info.start_at {
 		for _ in 0 .. info.start_at {
@@ -148,18 +147,21 @@ struct System {
 	term       Result
 	machine    Result
 	battery    Result
+	packages   Result
 mut:
 	song Result
 }
 
-struct DisplayDevice {
-	model       string @[json: sppci_model]
-	cores       string @[json: sppci_cores]
-	device_type string @[json: sppci_device_type]
+struct Display {
+	main       string @[json: spdisplays_main]
+	resolution string @[json: spdisplays_resolution]
 }
 
-struct Display {
-	displays []DisplayDevice @[json: SPDisplaysDataType]
+struct GPUDevice {
+	model       string    @[json: sppci_model]
+	cores       string    @[json: sppci_cores]
+	device_type string    @[json: sppci_device_type]
+	displays    []Display @[json: spdisplays_ndrvs]
 }
 
 struct StorageDevice {
@@ -179,7 +181,7 @@ struct HardwareDevice {
 struct Machine {
 	hardware []HardwareDevice @[json: SPHardwareDataType]
 	storages []StorageDevice  @[json: SPStorageDataType]
-	displays []DisplayDevice  @[json: SPDisplaysDataType]
+	gpu      []GPUDevice      @[json: SPDisplaysDataType]
 }
 
 fn get_user(str string) Result {
@@ -254,26 +256,20 @@ fn get_cpu(str string) Result {
 }
 
 fn get_gpu(data Machine) Result {
-	mut model := ''
-	mut cores := ''
+	for gpu in data.gpu {
+		if gpu.device_type == 'spdisplays_gpu' {
+			model := gpu.model
+			cores := gpu.cores
 
-	if data.displays.len > 0 {
-		for display in data.displays {
-			if display.device_type == 'spdisplays_gpu' {
-				model = display.model
-				cores = display.cores
-				break
+			if cores == '' {
+				return success(model)
 			}
+
+			return success('${model} (${cores} cores)')
 		}
-	} else {
-		return failure
 	}
 
-	if cores == '' {
-		return success(model)
-	}
-
-	return success('${model} (${cores} cores)')
+	return failure
 }
 
 fn get_storage(data Machine) Result {
@@ -295,17 +291,13 @@ fn get_storage(data Machine) Result {
 	return success('${used} / ${total} GB')
 }
 
-fn get_resolution(str string) Result {
-	mut re := regex.regex_opt(r'RESOLUTION\s(?P<res>[0-9]+x[0-9]+).+@(?P<freq>[0-9]+)$') or {
-		println(err)
-		return failure
-	}
-
-	start, _ := re.find(str)
-	if start >= 0 && 'res' in re.group_map && 'freq' in re.group_map {
-		res := re.get_group_by_name(str, 'res')
-		freq := re.get_group_by_name(str, 'freq')
-		return success('${res} @ ${freq}Hz')
+fn get_resolution(data Machine) Result {
+	for gpu in data.gpu {
+		for display in gpu.displays {
+			if display.main == 'spdisplays_yes' && display.resolution != '' {
+				return success(display.resolution)
+			}
+		}
 	}
 
 	return failure
@@ -332,9 +324,7 @@ fn get_os(str string) Result {
 	}
 
 	get_os_name := fn (input string) ?string {
-		version := semver.coerce(input) or {
-			return none
-		}
+		version := semver.coerce(input) or { return none }
 
 		return match true {
 			version >= semver.build(14, 0, 0) { 'Sonoma' }
@@ -398,27 +388,35 @@ fn get_battery(str string) Result {
 	return failure
 }
 
+fn get_packages(str string) Result {
+	numbers := str.trim_space().trim_left('PACKAGES ').split(' ').map(it.int())
+	packages := arrays.fold(numbers, 0, fn(acc int, num int) int {return acc + num})
+	if packages > 0 {
+		return success('${packages} (homebrew)')
+	}
+
+	return failure
+}
+
 fn get_misc(str string) !Machine {
 	return json.decode(Machine, str.trim_left('MISC '))
 }
 
 fn new_system() ?System {
-	query := os.execute(r"echo \
-		USER $USER \|\
-		TERM $TERM_PROGRAM $TERM \|\
-		UPTIME $(sysctl -n kern.boottime) \|\
-		MEMORY $(($(sysctl -n hw.memsize) / 1024 / 1024 / 1024)) \
-		PAGE_SIZE $(sysctl -n hw.pagesize) \
-		APP $(($(sysctl -n vm.page_pageable_internal_count) - $(sysctl -n vm.page_purgeable_count))) \
-		WIRED $(vm_stat | awk '/ wired/ { print $4 }') \
-		COMPRESSED $(vm_stat | awk '/ occupied/ { printf $5 }') \|\
-		CPU $(sysctl -n machdep.cpu.brand_string) \
-		CORES $(sysctl -n hw.physicalcpu_max) \|\
-		RESOLUTION $(screenresolution get 2>&1 | awk '/Display/ {printf $6 }') \|\
-		MISC $(system_profiler SPHardwareDataType SPStorageDataType SPDisplaysDataType -detailLevel mini -json ) \|\
-		OS $(awk -F'<|>' '/key|string/ {print $3}' /System/Library/CoreServices/SystemVersion.plist) \|\
-		BATTERY $(pmset -g batt | grep -o '[0-9]*%')
-		")
+	query := os.execute(r"echo USER $USER \|\
+	TERM $TERM_PROGRAM $TERM \|\
+	UPTIME $(sysctl -n kern.boottime) \|\
+	MEMORY $(($(sysctl -n hw.memsize) / 1024 / 1024 / 1024)) \
+	PAGE_SIZE $(sysctl -n hw.pagesize) \
+	APP $(($(sysctl -n vm.page_pageable_internal_count) - $(sysctl -n vm.page_purgeable_count))) \
+	WIRED $(vm_stat | awk '/ wired/ { print $4 }') \
+	COMPRESSED $(vm_stat | awk '/ occupied/ { printf $5 }') \|\
+	CPU $(sysctl -n machdep.cpu.brand_string) \
+	CORES $(sysctl -n hw.physicalcpu_max) \|\
+	PACKAGES $(ls /opt/homebrew/Cellar | wc -w; ls /opt/homebrew/Caskroom | wc -w) \|\
+	MISC $(system_profiler SPHardwareDataType SPStorageDataType SPDisplaysDataType -detailLevel mini -json ) \|\
+	OS $(awk -F'<|>' '/key|string/ {print $3}' /System/Library/CoreServices/SystemVersion.plist) \|\
+	BATTERY $(pmset -g batt | grep -o '[0-9]*%')")
 
 	if query.output.len == 0 {
 		return none
@@ -431,10 +429,11 @@ fn new_system() ?System {
 	mut gpu := failure
 	mut resolution := failure
 	mut storage := failure
-	mut myos := failure
+	mut user_os := failure
 	mut machine := failure
 	mut battery := failure
-	mut myterm := failure
+	mut user_term := failure
+	mut packages := failure
 
 	for field in query.output.split('|') {
 		match true {
@@ -450,22 +449,23 @@ fn new_system() ?System {
 			field.starts_with('CPU') {
 				cpu = get_cpu(field)
 			}
-			field.starts_with('RESOLUTION') {
-				resolution = get_resolution(field)
-			}
 			field.starts_with('OS') {
-				myos = get_os(field)
+				user_os = get_os(field)
 			}
 			field.starts_with('TERM') {
-				myterm = get_term(field)
+				user_term = get_term(field)
 			}
 			field.starts_with('BATTERY') {
 				battery = get_battery(field)
 			}
+			field.starts_with('PACKAGES') {
+				packages = get_packages(field)
+			}
 			field.starts_with('MISC') {
 				data := get_misc(field) or { continue }
-				machine = get_machine(data)
 				storage = get_storage(data)
+				machine = get_machine(data)
+				resolution = get_resolution(data)
 				gpu = get_gpu(data)
 			}
 			else {
@@ -482,9 +482,10 @@ fn new_system() ?System {
 		gpu: gpu
 		resolution: resolution
 		storage: storage
-		os: myos
-		term: myterm
+		os: user_os
+		term: user_term
 		machine: machine
+		packages: packages
 		battery: battery
 	}
 }
@@ -549,6 +550,10 @@ fn main() {
 
 	if sys.storage.success {
 		info.write_string(term.bright_yellow('│ STORAGE    │ : ${sys.storage.result}'))
+	}
+
+	if sys.packages.success {
+		info.write_string(term.bright_yellow('│ PACKAGES   │ : ${sys.packages.result}'))
 	}
 
 	if sys.uptime.success {
