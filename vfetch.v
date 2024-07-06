@@ -48,9 +48,7 @@ mut:
 }
 
 fn (mut info Info) start() {
-	$if prod {
-		term.clear()
-	}
+	$if prod { term.clear()	}
 
 	info.can_display_image = os.exists_in_system_path('kitty')
 
@@ -117,7 +115,8 @@ fn (mut info Info) print() {
 	if info.can_display_image && info.image != '' {
 		image_path := os.real_path(info.image)
 		if os.exists(image_path) {
-			os.execute('kitty +kitten icat --align left --place ${32}x${24}@1x1 ${image_path}')
+			result := os.execute('kitten icat --clear --align left --place 32x24@1x4 ${image_path}')
+      if result.exit_code == 0 { print(result.output) }
 		}
 	}
 
@@ -131,7 +130,7 @@ fn (mut info Info) print() {
 
 fn main() {
 	args := parse_args()
-	
+
 	mut sys := system.new_system()?
 
 	mut info := Info{
