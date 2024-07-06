@@ -7,6 +7,8 @@
 </h3>
 
 <img src="https://user-images.githubusercontent.com/19891059/180103104-db95ce20-4b2a-4a92-96d1-2f1e11a69b57.png" width="50%">
+<img src="https://github.com/carlosqsilva/vfetch/assets/19891059/3f40e56c-b649-408f-975b-b3786af7fd9b" width="50%">
+
 </div>
 
 # Usage
