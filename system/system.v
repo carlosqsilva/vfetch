@@ -91,6 +91,10 @@ pub fn new_system() ?&System {
 		return none
 	}
 
+	if info := get_power_adapter_info() {
+	 dump(info)
+	}
+
 	mut sys := &System{}
 
 	for field in query.output.split('|') {
@@ -134,4 +138,3 @@ pub fn new_system() ?&System {
 
 	return sys
 }
-
