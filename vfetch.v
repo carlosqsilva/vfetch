@@ -171,6 +171,10 @@ fn main() {
 		info.write_string(term.bright_yellow('│ MEMORY     │ : ${sys.memory.result}'))
 	}
 
+	if sys.swap.success {
+		info.write_string(term.bright_yellow('│ SWAP       │ : ${sys.swap.result}'))
+	}
+
 	if sys.storage.success {
 		info.write_string(term.bright_yellow('│ STORAGE    │ : ${sys.storage.result}'))
 	}
@@ -210,4 +214,3 @@ fn main() {
 
 	info.print()
 }
-

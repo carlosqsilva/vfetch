@@ -57,6 +57,7 @@ pub mut:
 	user       Result
 	uptime     Result
 	memory     Result
+	swap       Result
 	cpu        Result
 	gpu        Result
 	resolution Result
@@ -69,23 +70,28 @@ pub mut:
 	song       Result
 }
 
+fn human_readable_size(size u64) string {
+  units := ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+  mut index := 0
+  mut size_f := f64(size)
+
+  for size_f >= 1024 && index < units.len - 1 {
+      size_f /= 1024
+      index++
+  }
+
+  return '${size_f:.2f} ${units[index]}'
+}
 
 @[inline]
 pub fn new_system() ?&System {
 	query := os.execute(r"echo USER $USER \|\
 	TERM $TERM_PROGRAM $TERM \|\
-	UPTIME $(sysctl -n kern.boottime) \|\
-	MEMORY $(($(sysctl -n hw.memsize) / 1024 / 1024 / 1024)) \
-	PAGE_SIZE $(sysctl -n hw.pagesize) \
-	APP $(($(sysctl -n vm.page_pageable_internal_count) - $(sysctl -n vm.page_purgeable_count))) \
-	WIRED $(vm_stat | awk '/ wired/ { print $4 }') \
-	COMPRESSED $(vm_stat | awk '/ occupied/ { printf $5 }') \|\
 	CPU $(sysctl -n machdep.cpu.brand_string) \
 	CORES $(sysctl -n hw.physicalcpu_max) \|\
 	PACKAGES $(ls /opt/homebrew/Cellar | wc -w; ls /opt/homebrew/Caskroom | wc -w) \|\
 	MISC $(system_profiler SPHardwareDataType SPStorageDataType SPDisplaysDataType -detailLevel mini -json ) \|\
-	OS $(awk -F'<|>' '/key|string/ {print $3}' /System/Library/CoreServices/SystemVersion.plist) \|\
-	BATTERY $(pmset -g batt | grep -o '[0-9]*%')")
+	OS $(awk -F'<|>' '/key|string/ {print $3}' /System/Library/CoreServices/SystemVersion.plist)")
 
 	if query.output.len == 0 {
 		return none
@@ -93,16 +99,15 @@ pub fn new_system() ?&System {
 
 	mut sys := &System{}
 
+	sys.battery = get_battery()
+	sys.uptime = get_uptime()
+	sys.swap = get_swap()
+	sys.memory = get_memory()
+
 	for field in query.output.split('|') {
 		match true {
 			field.starts_with('USER') {
 				sys.user = get_user(field)
-			}
-			field.starts_with('UPTIME') {
-				sys.uptime = get_uptime(field)
-			}
-			field.starts_with('MEMORY') {
-				sys.memory = get_memory(field)
 			}
 			field.starts_with('CPU') {
 				sys.cpu = get_cpu(field)
@@ -112,9 +117,6 @@ pub fn new_system() ?&System {
 			}
 			field.starts_with('TERM') {
 				sys.term = get_term(field)
-			}
-			field.starts_with('BATTERY') {
-				sys.battery = get_battery(field)
 			}
 			field.starts_with('PACKAGES') {
 				sys.packages = get_packages(field)
@@ -134,4 +136,3 @@ pub fn new_system() ?&System {
 
 	return sys
 }
-

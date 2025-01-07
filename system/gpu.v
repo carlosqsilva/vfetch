@@ -11,10 +11,9 @@ fn get_gpu(data Machine) Result {
 				return success(model)
 			}
 
-			return success('${model} (${cores} cores)')
+			return success('${model} ${cores} cores')
 		}
 	}
 
 	return failure
 }
-
