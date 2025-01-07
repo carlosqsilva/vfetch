@@ -10,7 +10,7 @@ fn get_cpu(str string) Result {
 	if start >= 0 && 'cpu' in re.group_map && 'cores' in re.group_map {
 		cpu := re.get_group_by_name(str, 'cpu')
 		cores := re.get_group_by_name(str, 'cores')
-		return success('${cpu} ${cores} cores (physical)')
+		return success('${cpu} ${cores} cores')
 	}
 
 	return failure
