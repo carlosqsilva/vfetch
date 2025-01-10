@@ -1,17 +1,23 @@
 module system
 
-import regex
+#include <sys/types.h>
+#include <sys/sysctl.h>
+
+fn C.sysctlbyname(name &char, oldp voidptr, oldlenp &usize, newp voidptr, newlen u64) int
 
 @[inline]
-fn get_cpu(str string) Result {
-	mut re := regex.regex_opt(r'CPU\s(?P<cpu>.+)\sCORES\s(?P<cores>[0-9]+)') or { return failure }
-	start, _ := re.find(str)
+fn get_cpu() Result {
+  mut cpu_model := []u8{len: 256}
+  mut len := usize(sizeof(cpu_model))
+  if C.sysctlbyname("machdep.cpu.brand_string".str, &char(cpu_model.data), &len, 0, 0) != 0 {
+    return failure
+  }
 
-	if start >= 0 && 'cpu' in re.group_map && 'cores' in re.group_map {
-		cpu := re.get_group_by_name(str, 'cpu')
-		cores := re.get_group_by_name(str, 'cores')
-		return success('${cpu} ${cores} cores')
-	}
+  mut cores := 0
+  mut cores_len := usize(sizeof(cores))
+  if C.sysctlbyname("machdep.cpu.core_count".str, &cores, &cores_len, 0, 0) != 0 {
+    return failure
+  }
 
-	return failure
+  return success("${cpu_model.bytestr()} ${cores} cores")
 }

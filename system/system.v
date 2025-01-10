@@ -87,45 +87,35 @@ fn human_readable_size(size u64) string {
 pub fn new_system() ?&System {
 	query := os.execute(r"echo USER $USER \|\
 	TERM $TERM_PROGRAM $TERM \|\
-	CPU $(sysctl -n machdep.cpu.brand_string) \
-	CORES $(sysctl -n hw.physicalcpu_max) \|\
-	PACKAGES $(ls /opt/homebrew/Cellar | wc -w; ls /opt/homebrew/Caskroom | wc -w) \|\
-	MISC $(system_profiler SPHardwareDataType SPStorageDataType SPDisplaysDataType -detailLevel mini -json ) \|\
-	OS $(awk -F'<|>' '/key|string/ {print $3}' /System/Library/CoreServices/SystemVersion.plist)")
+	MISC $(system_profiler SPHardwareDataType SPStorageDataType SPDisplaysDataType -detailLevel mini -json )")
 
 	if query.output.len == 0 {
 		return none
 	}
 
-	mut sys := &System{}
-
-	sys.battery = get_battery()
-	sys.uptime = get_uptime()
-	sys.swap = get_swap()
-	sys.memory = get_memory()
+	mut sys := &System{
+	  os: get_os()
+		battery: get_battery()
+		uptime: get_uptime()
+		swap: get_swap()
+		memory: get_memory()
+		packages: get_packages()
+		cpu: get_cpu()
+		resolution: get_resolution()
+	}
 
 	for field in query.output.split('|') {
 		match true {
 			field.starts_with('USER') {
 				sys.user = get_user(field)
 			}
-			field.starts_with('CPU') {
-				sys.cpu = get_cpu(field)
-			}
-			field.starts_with('OS') {
-				sys.os = get_os(field)
-			}
 			field.starts_with('TERM') {
 				sys.term = get_term(field)
-			}
-			field.starts_with('PACKAGES') {
-				sys.packages = get_packages(field)
 			}
 			field.starts_with('MISC') {
 				data := get_misc(field) or { continue }
 				sys.storage = get_storage(data)
 				sys.machine = get_machine(data)
-				sys.resolution = get_resolution(data)
 				sys.gpu = get_gpu(data)
 			}
 			else {
