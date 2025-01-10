@@ -1,32 +1,62 @@
 module system
 
+import os
 import semver
 
+const file_path = "/System/Library/CoreServices/SystemVersion.plist"
+
+fn parse_plist_file(content string) map[string]string {
+  lines := content.split_into_lines()
+  mut result := map[string]string{}
+
+  for index, item in lines {
+    mut line := item.trim_space()
+    if line.starts_with('<key>') {
+      key := line.all_after('<key>').all_before('</key>').trim_space()
+
+      if index + 1 < lines.len {
+        next_line := lines[index + 1].trim_space()
+        if next_line.starts_with('<string>') {
+          value := next_line.all_after('<string>').all_before('</string>').trim_space()
+          result[key] = value
+        }
+      }
+    }
+  }
+
+  return result
+}
+
 @[inline]
-fn get_os(str string) Result {
+fn get_os() Result {
+  content := os.read_file(file_path) or {
+    return failure
+  }
+
 	mut product_name := ''
 	mut product_version := ''
 	mut product_build_version := ''
 
-	fields := str.split(' ')
+  result := parse_plist_file(content)
 
-	for index, field in fields {
-		match field {
-			'ProductName' { product_name = fields[index + 1] }
-			'ProductVersion' { product_version = fields[index + 1] }
-			'ProductBuildVersion' { product_build_version = fields[index + 1] }
-			else { continue }
-		}
-	}
+  if name := result['ProductName'] {
+    product_name = name
+  }
 
-	if product_name == '' || product_version == '' || product_build_version == '' {
+  if version := result['ProductVersion'] {
+    product_version = version
+  }
+
+  if build := result['ProductBuildVersion'] {
+    product_build_version = build
+  }
+
+	if '' in [product_name, product_version,  product_build_version] {
 		return failure
 	}
 
-	get_os_name := fn (input string) ?string {
-		version := semver.coerce(input) or { return none }
-
-		return match true {
+	get_name := fn (version semver.Version) ?string {
+	  return match true {
 			version >= semver.build(15, 0, 0) { 'Sequoia' }
 			version >= semver.build(14, 0, 0) { 'Sonoma' }
 			version >= semver.build(13, 0, 0) { 'Ventura' }
@@ -52,9 +82,11 @@ fn get_os(str string) Result {
 		}
 	}
 
-	if os_name := get_os_name(product_version) {
-		return success('${product_name} ${os_name} ${product_version} (${product_build_version})')
+	version := semver.coerce(product_version) or { return failure }
+
+	if name := get_name(version) {
+		return success('${product_name} ${name} ${product_version} (${product_build_version})')
 	}
-		
+
 	return success('${product_name} ${product_version} (${product_build_version})')
 }
