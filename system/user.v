@@ -1,12 +1,12 @@
 module system
 
-@[inline]
-fn get_user(str string) Result {
-	pieces := str.split(' ')
+import os
 
-	if pieces.len >= 2 {
-		return success(pieces[1])
-	}
+@[inline]
+fn get_user() Result {
+  if user := os.getenv_opt("USER") {
+    return success(user)
+  }
 
 	return failure
 }

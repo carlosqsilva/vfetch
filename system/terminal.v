@@ -1,11 +1,12 @@
 module system
 
+import os
+
 @[inline]
-fn get_term(str string) Result {
-	fields := str.trim_space().split(' ')
-	if fields.len > 0 {
-		return success(fields[1])
-	}
+fn get_term() Result {
+  if term := os.getenv_opt("TERM_PROGRAM") {
+    return success(term)
+  }
 
 	return failure
 }

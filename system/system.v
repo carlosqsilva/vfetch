@@ -49,7 +49,7 @@ struct Machine {
 
 @[inline]
 fn get_misc(str string) !Machine {
-	return json.decode(Machine, str.trim_left('MISC '))
+	return json.decode(Machine, str.trim_space())
 }
 
 struct System {
@@ -85,15 +85,24 @@ fn human_readable_size(size u64) string {
 
 @[inline]
 pub fn new_system() ?&System {
-	query := os.execute(r"echo USER $USER \|\
-	TERM $TERM_PROGRAM $TERM \|\
-	MISC $(system_profiler SPHardwareDataType SPStorageDataType SPDisplaysDataType -detailLevel mini -json )")
+  mut result := spawn fn () ?(Result, Result, Result) {
+    query := unsafe {
+      os.raw_execute(r"system_profiler SPHardwareDataType SPStorageDataType SPDisplaysDataType -detailLevel mini -json")
+    }
 
-	if query.output.len == 0 {
-		return none
-	}
+    if data := get_misc(query.output) {
+      storage := get_storage(data)
+      machine := get_machine(data)
+      gpu := get_gpu(data)
+
+      return storage, machine, gpu
+    }
+
+    return none
+  }()
 
 	mut sys := &System{
+    user: get_user()
 	  os: get_os()
 		battery: get_battery()
 		uptime: get_uptime()
@@ -102,27 +111,14 @@ pub fn new_system() ?&System {
 		packages: get_packages()
 		cpu: get_cpu()
 		resolution: get_resolution()
+    term: get_term()
 	}
 
-	for field in query.output.split('|') {
-		match true {
-			field.starts_with('USER') {
-				sys.user = get_user(field)
-			}
-			field.starts_with('TERM') {
-				sys.term = get_term(field)
-			}
-			field.starts_with('MISC') {
-				data := get_misc(field) or { continue }
-				sys.storage = get_storage(data)
-				sys.machine = get_machine(data)
-				sys.gpu = get_gpu(data)
-			}
-			else {
-				continue
-			}
-		}
-	}
+  if storage, machine, gpu := result.wait() {
+    sys.storage = storage
+    sys.machine = machine
+    sys.gpu = gpu
+  }
 
 	return sys
 }
