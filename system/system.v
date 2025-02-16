@@ -67,6 +67,7 @@ pub mut:
 	machine    Result
 	battery    Result
 	packages   Result
+	bluetooth  Result
 	song       Result
 }
 
@@ -111,6 +112,7 @@ pub fn new_system() ?&System {
 		packages: get_packages()
 		cpu: get_cpu()
 		resolution: get_resolution()
+		bluetooth: get_bluetooth_status()
     term: get_term()
 	}
 

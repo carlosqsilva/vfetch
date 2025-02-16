@@ -72,10 +72,10 @@ fn (mut info Info) write_logo() {
 	}
 
 	color := match info.index {
-		0...5 { term.green }
-		6...7 { term.yellow }
+		0...4 { term.green }
+		5...7 { term.yellow }
 		8...11 { term.red }
-		12...13 { term.magenta }
+		12...14 { term.magenta }
 		else { term.blue }
 	}
 
@@ -191,12 +191,16 @@ fn main() {
 		info.write_string(term.bright_yellow('│ BATTERY    │ : ${sys.battery.result}'))
 	}
 
+	if sys.bluetooth.success {
+		info.write_string(term.bright_yellow('│ BLUETOOTH  │ : ${sys.bluetooth.result}'))
+	}
+
 	if sys.term.success {
 		info.write_string(term.bright_yellow('│ TERMINAL   │ : ${sys.term.result}'))
 	}
 
 	if !args.hide_colour_strip && !args.no_colour_mode {
-		dot := '■'
+		dot := "◼"
 		info.write_string(term.bright_yellow('├────────────┤'))
 		info.write_string(term.bright_yellow('│ COLORS     │ ${term.white(dot)} ${term.gray(dot)} ${term.red(dot)} ${term.yellow(dot)} ${term.green(dot)} ${term.blue(dot)} ${term.magenta(dot)}'))
 	}
