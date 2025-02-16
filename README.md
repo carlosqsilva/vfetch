@@ -17,11 +17,13 @@
 vfetch
 ```
 
+🚨: `vfetch` require user permission to show connected bluetooth devices
+
 flags:
 
 ```bash
 -s --song          | Print current playing music, works with Apple Music
--i --image         | Display custom image, only works with kitty terminal
+-i --image         | Display custom image, only works with terminal that support kitty graphic protocol
 --no-colour        | Turns off colour-formatted output and also implies --no-colour-demo
 --no-colour-demo   | Turns off the colour demo swatch
 ```
