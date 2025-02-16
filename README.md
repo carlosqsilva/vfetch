@@ -12,9 +12,11 @@
 </div>
 
 # Usage
+
 ```bash
 vfetch
 ```
+
 flags:
 
 ```bash
@@ -35,22 +37,31 @@ brew install carlosqsilva/brew/vfetch
 ## Install from source
 
 ### 0) Install [vlang](https://vlang.io), and add to your `path`
+
 ### 1) clone repo
+
 ```bash
 git clone https://github.com/carlosqsilva/vfetch.git
 ```
+
 ### 2) change dir to `vfetch`
+
 ```bash
 cd vfetch/
 ```
+
 ### 3) build program
+
 ```bash
-v -prod .
+just build #or
+v -cflags "-framework IOBluetooth -framework Foundation" -prod -o vfetch .
 ```
+
 After that you will get a ready-made binary file in the root directory of the project.
 
-
 # Thanks for ideas & examples 💬
+
 - [pfetch](https://github.com/dylanaraps/pfetch/)
 - [neofetch](https://github.com/dylanaraps/neofetch)
+- [fastfetch](https://github.com/fastfetch-cli/fastfetch)
 - [nitch](https://github.com/unxsh/nitch)
