@@ -57,6 +57,7 @@ fn get_os() Result {
 
 	get_name := fn (version semver.Version) ?string {
 	  return match true {
+			version >= semver.build(26, 0, 0) { 'Tahoe' }
 			version >= semver.build(15, 0, 0) { 'Sequoia' }
 			version >= semver.build(14, 0, 0) { 'Sonoma' }
 			version >= semver.build(13, 0, 0) { 'Ventura' }
