@@ -1,10 +1,10 @@
-CFLAGS := "-framework IOBluetooth -framework Foundation"
+CFLAGS := "-framework IOBluetooth -framework Foundation -framework CoreBluetooth"
 
 run *ARGS:
-	v -cflags "{{CFLAGS}}" run . {{ARGS}}
+    v -cflags "{{ CFLAGS }}" run . {{ ARGS }}
 
 build:
-	v -cflags "{{CFLAGS}}" -prod -o vfetch .
+    v -cflags "{{ CFLAGS }}" -prod -o vfetch .
 
 help:
-	@just --list
+    @just --list
