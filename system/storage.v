@@ -2,13 +2,13 @@ module system
 
 @[inline]
 fn get_storage(data Machine) Result {
-	mut used := 0.0
-	mut total := 0.0
+	mut used := f64(0.0)
+	mut total := f64(0.0)
 
 	for device in data.storages {
 		if device.mount == '/' {
-			total = device.size / 1_000_000_000
-			used = total - (device.free / 1_000_000_000)
+			total = f64(device.size / 1_000_000_000)
+			used = total - f64(device.free / 1_000_000_000)
 			break
 		}
 	}
@@ -19,4 +19,3 @@ fn get_storage(data Machine) Result {
 
 	return success('${used} / ${total} GB')
 }
-

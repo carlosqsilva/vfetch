@@ -18,7 +18,6 @@ fn get_swap() Result {
   mut swap_info_len := usize(sizeof(C.xsw_usage))
   mib := [2, 5]!
 
-  // Get the boot time using sysctl
   if C.sysctl(mib, 2, &swap_info, &swap_info_len, C.NULL, 0) < 0 {
     return failure
   }
