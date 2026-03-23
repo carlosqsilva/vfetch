@@ -1,52 +1,28 @@
-// #import <Foundation/Foundation.h>
-// #import <IOBluetooth/IOBluetooth.h>
-
-// int main(int argc, const char * argv[]) {
-//     @autoreleasepool {
-//         // Get the list of paired devices
-//         NSArray *devices = [IOBluetoothDevice pairedDevices];
-
-//         if ([devices count] == 0) {
-//             NSLog(@"No Bluetooth devices are paired.");
-//             return 0;
-//         }
-
-//         // Iterate through the list of devices
-//         for (IOBluetoothDevice *device in devices) {
-//             NSString *deviceName = [device name];
-//             NSString *deviceAddress = [device addressString];
-//             BOOL isConnected = [device isConnected];
-
-//             NSLog(@"Device Name: %@", deviceName);
-//             NSLog(@"Device Address: %@", deviceAddress);
-//             NSLog(@"Connected: %@", isConnected ? @"Yes" : @"No");
-//             NSLog(@"-----------------------------");
-//         }
-//     }
-//     return 0;
-// }
-
 #import <Foundation/Foundation.h>
 #import <IOBluetooth/IOBluetooth.h>
+#import <CoreBluetooth/CoreBluetooth.h>
 
 int get_connected_devices() {
-  NSArray *pairedDevices = [IOBluetoothDevice pairedDevices];
-  NSUInteger pairedDevicesCount = [pairedDevices count];
+  @autoreleasepool {
+    // Check TCC permission before touching IOBluetooth.
+    // CBManager.authorization is safe to call without permission and won't crash.
+    CBManagerAuthorization auth = [CBCentralManager authorization];
+    if (auth != CBManagerAuthorizationAllowedAlways) {
+      return -1;
+    }
 
-  if (pairedDevicesCount == 0) {
-    return 0;
-  }
+    @try {
+      NSArray *pairedDevices = [IOBluetoothDevice pairedDevices];
 
-  int connectedDeviceCount = 0;
-
-  for (IOBluetoothDevice *device in pairedDevices) {
-    BOOL isPaired = [device isPaired];
-    BOOL isConnected = [device isConnected];
-
-    if (isPaired && isConnected) {
-      connectedDeviceCount++;
+      int connectedDeviceCount = 0;
+      for (IOBluetoothDevice *device in pairedDevices) {
+        if ([device isPaired] && [device isConnected]) {
+          connectedDeviceCount++;
+        }
+      }
+      return connectedDeviceCount;
+    } @catch (NSException *exception) {
+      return -1;
     }
   }
-
-  return connectedDeviceCount;
 }
