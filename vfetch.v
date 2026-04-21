@@ -196,7 +196,11 @@ fn main() {
 	}
 
 	if sys.term.success {
-		info.write_string(term.bright_yellow('│ TERMINAL   │ : ${sys.term.result}'))
+	  if sys.term.success {
+			info.write_string(term.bright_yellow('│ TERMINAL   │ : ${sys.term.result} (${sys.shell.result})'))
+		} else {
+		  info.write_string(term.bright_yellow('│ TERMINAL   │ : ${sys.term.result}'))
+		}
 	}
 
 	if !args.hide_colour_strip && !args.no_colour_mode {

@@ -64,6 +64,7 @@ pub mut:
 	storage    Result
 	os         Result
 	term       Result
+	shell      Result
 	machine    Result
 	battery    Result
 	packages   Result
@@ -114,6 +115,7 @@ pub fn new_system() ?&System {
 		resolution: get_resolution()
 		bluetooth: get_bluetooth_status()
     term: get_term()
+    shell: get_shell()
 	}
 
   if storage, machine, gpu := result.wait() {
