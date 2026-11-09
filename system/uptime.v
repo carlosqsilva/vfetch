@@ -15,7 +15,7 @@ fn C.gettimeofday(tv &C.timeval, tz voidptr) int
 @[inline]
 fn get_uptime() Result {
     mut boottime := C.timeval{}
-    mut boottime_len := usize(sizeof(C.timeval))
+    mut boottime_len := uint(sizeof(C.timeval))
     mib := [1, 21]!
 
     // Get the boot time using sysctl

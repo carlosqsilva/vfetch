@@ -1,6 +1,6 @@
 module system
 
-import json
+import json2
 import os
 
 struct Result {
@@ -49,7 +49,7 @@ struct Machine {
 
 @[inline]
 fn get_misc(str string) !Machine {
-	return json.decode(Machine, str.trim_space())
+	return json2.decode[Machine](str.trim_space())
 }
 
 struct System {
@@ -88,9 +88,8 @@ fn human_readable_size(size u64) string {
 @[inline]
 pub fn new_system() ?&System {
   mut result := spawn fn () ?(Result, Result, Result) {
-    query := unsafe {
-      os.raw_execute(r"system_profiler SPHardwareDataType SPStorageDataType SPDisplaysDataType -detailLevel mini -json")
-    }
+    query := os.exec(['system_profiler', 'SPHardwareDataType', 'SPStorageDataType', 'SPDisplaysDataType',
+      '-detailLevel', 'mini', '-json'])
 
     if data := get_misc(query.output) {
       storage := get_storage(data)

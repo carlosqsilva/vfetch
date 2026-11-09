@@ -38,7 +38,7 @@ struct C.vm_statistics64 {
 fn C.mach_host_self() int
 fn C.host_page_size(host int, page_size &u64) int
 fn C.host_statistics64(host int, flavor int, info &C.vm_statistics64, count &int) int
-fn C.sysctlbyname(name &char, oldp voidptr, oldlenp &usize, newp voidptr, newlen usize) int
+fn C.sysctlbyname(name &char, oldp voidptr, oldlenp &uint, newp voidptr, newlen uint) int
 
 const host_vm_info64       = 4
 const host_vm_info64_count = 38
@@ -50,7 +50,7 @@ const pressure_critical = u32(4)
 @[inline]
 fn memory_pressure() ?string {
   mut level := u32(0)
-  mut size := usize(sizeof(level))
+  mut size := uint(sizeof(level))
   if C.sysctlbyname(c'kern.memorystatus_vm_pressure_level', &level, &size, unsafe { nil }, 0) != 0 {
     return '?'
   }
@@ -66,7 +66,7 @@ fn memory_pressure() ?string {
 fn get_memory() Result {
   mib := [6, 24]!
   mut total := u64(0)
-  mut total_length := usize(sizeof(total))
+  mut total_length := uint(sizeof(total))
   if C.sysctl(mib, 2, &total, &total_length, 0, 0) < 0 {
     return failure
   }
@@ -82,11 +82,7 @@ fn get_memory() Result {
     return failure
   }
 
-  mut used := (
-    stats.active_count
-    + stats.inactive_count
-    + stats.speculative_count
-    + stats.wire_count
+  used := (stats.active_count + stats.inactive_count + stats.speculative_count + stats.wire_count
     + stats.compressor_page_count - stats.purgeable_count - stats.external_page_count) * page_size
 
   if mem_pressure := memory_pressure() {

@@ -13,8 +13,8 @@ type CGError = u32
 // Bindings for CoreGraphics functions
 fn C.CGGetActiveDisplayList(u32, &CGDirectDisplayID, &u32) CGError
 fn C.CGDisplayCopyDisplayMode(CGDirectDisplayID) CGDisplayModeRef
-fn C.CGDisplayModeGetWidth(CGDisplayModeRef) usize
-fn C.CGDisplayModeGetHeight(CGDisplayModeRef) usize
+fn C.CGDisplayModeGetWidth(CGDisplayModeRef) uint
+fn C.CGDisplayModeGetHeight(CGDisplayModeRef) uint
 fn C.CGDisplayModeGetRefreshRate(CGDisplayModeRef) f64
 fn C.CGDisplayModeRelease(CGDisplayModeRef)
 

@@ -20,7 +20,7 @@ fn C.IOPSGetPowerSourceDescription(source &C.CFTypeRef, value &C.CFTypeRef) &C.C
 
 fn C.IOPSCopyExternalPowerAdapterDetails() &C.CFDictionaryRef
 fn C.CFDictionaryGetValue(theDict &C.CFDictionaryRef, key &C.CFStringRef) &C.CFTypeRef
-fn C.CFStringGetCString(theString &C.CFStringRef, buffer &char, bufferSize usize, encoding int) bool
+fn C.CFStringGetCString(theString &C.CFStringRef, buffer &char, bufferSize uint, encoding int) bool
 fn C.CFNumberGetValue(number &C.CFNumberRef, theType int, valuePtr voidptr) bool
 fn C.CFRelease(cf &C.CFTypeRef)
 fn C.CFStringCreateWithCString(alloc &C.CFAllocatorRef, cStr &char, encoding int) &C.CFStringRef

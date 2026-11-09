@@ -115,7 +115,7 @@ fn (mut info Info) print() {
 	if info.can_display_image && info.image != '' {
 		image_path := os.real_path(info.image)
 		if os.exists(image_path) {
-			result := os.execute('kitten icat --clear --align left --place 32x24@1x4 ${image_path}')
+			result := os.exec(['kitten', 'icat', '--clear', '--align', 'left', '--place', '32x24@1x4', image_path])
       if result.exit_code == 0 { print(result.output) }
 		}
 	}
